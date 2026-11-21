@@ -1,0 +1,1 @@
+"""OpenMinion-powered research briefs."""

@@ -1,0 +1,26 @@
+{
+  "default_agent": "openminion",
+  "enabled_channels": ["console"],
+  "agents": {
+    "openminion": {
+      "name": "openminion",
+      "provider": "ollama",
+      "default_channel": "console",
+      "model_connections": {
+        "ollama": {
+          "default": true,
+          "provider": "ollama",
+          "models": ["qwen2.5:3b-instruct"]
+        }
+      }
+    }
+  },
+  "providers": {
+    "ollama": {
+      "base_url": "http://127.0.0.1:11434",
+      "model": "qwen2.5:3b-instruct",
+      "timeout_seconds": 150,
+      "tool_call_strategy": "native"
+    }
+  }
+}
