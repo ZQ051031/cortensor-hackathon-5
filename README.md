@@ -69,8 +69,9 @@ openminion setup --provider ollama --model qwen2.5:3b-instruct --no-chat
 
 The setup command writes a default provider configuration for ordinary SDK
 discovery. The research demo below uses the checked-in
-[Ollama profile](config/ollama.json), which selects native tool calls and
-allows more time per model request on CPU. Keep the same `OPENMINION_HOME`
+[Ollama profile](config/ollama.json), which selects native tool calls,
+allows more time per model request on CPU, and skips automatic extraction of
+user facts for memory. Keep the same `OPENMINION_HOME`
 in any terminal that runs or inspects the demo. To select a different SDK
 configuration, pass `--config /path/to/agents.json` or set
 `RESEARCH_BRIEF_CONFIG`. To select a model on that profile, pass `--model`
@@ -88,14 +89,13 @@ research-brief 'What does READ_ONLY declare in the OpenMinion Python SDK lookup_
 ```
 
 Type `y` after reading the preview to save the brief. Press Enter to discard
-it. Inspect `output/sessions/` for the run log. The verified CPU run took
-118.796 seconds, retrieved both sources, and saved the exact preview. See the
-[unedited sample brief](examples/sample-brief.md) and the
-[command, model digest, and output paths](TEST_RESULTS.md#live-model-verification).
+it. Inspect `output/sessions/` for the run log. See the
+[sample brief](examples/sample-brief.md) and the
+[commands, timings, and output paths](TEST_RESULTS.md#live-model-verification).
 
-The sample overstates the scope rule. In the tagged example,
-`min_scope="READ_ONLY"` declares the minimum SDK policy scope required to
-call the tool. The Python implementation determines how it accesses data.
+In the tagged example, `min_scope="READ_ONLY"` declares the minimum SDK
+policy scope required to call the tool. The Python function determines how
+it accesses data.
 
 Other inputs
 
@@ -117,7 +117,7 @@ python -m pip check
 openminion --config config/ollama.json sessions list
 ```
 
-The offline pytest suite passed all 27 tests using local fixtures.
+The offline pytest suite passed all 28 tests using local fixtures.
 `pip check`, Ruff, and the wheel build also passed.
 See [TEST_RESULTS.md](TEST_RESULTS.md) for the commands and live run.
 See [Building Blocks Tested](docs/BUILDING_BLOCKS_TESTED.md) for the SDK

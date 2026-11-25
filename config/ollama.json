@@ -1,6 +1,11 @@
 {
   "default_agent": "openminion",
   "enabled_channels": ["console"],
+  "brain": {
+    "auto_fact_extraction": {
+      "enabled": false
+    }
+  },
   "agents": {
     "openminion": {
       "name": "openminion",

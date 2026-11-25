@@ -18,15 +18,73 @@ python -m pytest -q
 python -m pip check
 ```
 
-The clean environment passed **27 tests, 0 failed**. `pip check` reported
+The current suite passed **28 tests, 0 failed**. `pip check` reported
 `No broken requirements found.` The suite exercises URL restrictions, HTML
 and note extraction, bounded discovery, partial source failures, schema and
 citation validation, final JSON extraction, approval, decline, EOF, exact
-preview preservation, and timeout handling. Ruff lint and formatting checks
-passed for `src/` and `tests/`. A wheel built successfully with
+preview preservation, timeout handling, and the distinction between
+`READ_ONLY` policy scope and Python data access in the sample.
+Ruff lint and formatting checks passed for `src/` and `tests/`.
+A wheel built successfully with
 `python -m pip wheel --no-deps .`.
 
 ## Live model verification
+
+### Latency profile and verification command
+
+The profile used the corrected scope wording and the original Ollama
+configuration. Each request was timed at the SDK's Ollama HTTP boundary,
+and source gathering was timed separately.
+
+| Stage | Calls | Time (seconds) |
+| --- | ---: | ---: |
+| Automatic fact extraction | 1 | 24.495 |
+| Entry | 1 | 23.333 |
+| Freshness classification | 1 | 12.146 |
+| Source gathering and reuse | 2 | 0.182 |
+| Action and synthesis | 5 | 133.785 |
+| Closure judge | 1 | 32.901 |
+
+The profiled CLI run took 228.632 seconds, retrieved both source IDs, and
+rejected the model's draft because it returned five open questions (the
+schema allows four). Ollama requests accounted for 226.660
+seconds, with action and synthesis taking the largest share. The single
+optimization round disabled the SDK's optional preliminary fact extraction
+in the Ollama profile. That call stages candidates for memory. The
+research turn still plans, gathers evidence, and drafts the brief through
+OpenMinion with the same model and instructions as the profiled run.
+[OpenMinion configuration reference](https://github.com/openminion/openminion/blob/v0.1.24/docs/turn-budgets.md#automatic-fact-extraction)
+
+```bash
+export OPENMINION_HOME="$PWD/.openminion-home"
+printf 'y\n' | research-brief 'What does READ_ONLY declare in the OpenMinion Python SDK lookup_order example?' \
+  --url https://raw.githubusercontent.com/openminion/openminion/v0.1.24/examples/sdk/tool_agent.py \
+  --note examples/scope-notes.md \
+  --config config/ollama.json \
+  --model qwen2.5:3b-instruct
+```
+
+Both timed runs used that command with `qwen2.5:3b-instruct` and the same
+model digest. The SDK logged `brain.auto_fact_extraction.skipped` with
+reason `disabled` on both runs.
+
+| Run | Wall clock (seconds) | Sources retrieved | Outcome |
+| --- | ---: | --- | --- |
+| 1 | **126.721** | S1 and S2 | Exit 1. The reply exceeded the open-question limit and incorrectly claimed that `READ_ONLY` limits subsequent calls. |
+| 2 | 98.550 | S1 and S2 | Exit 0. The saved file matched the preview byte for byte. The model still described `READ_ONLY` too broadly as restricting the agent's actions. |
+
+The slower wall-clock time was **126.721 seconds**. It missed the
+60-second target and exceeded the 90-second stop line. The checked-in
+sample gives the corrected policy-scope explanation. These live runs
+showed that the model can still misstate it despite that guidance.
+
+```text
+Run 1 log: output/sessions/20261125T071456Z-brief-2c0bbb1a904346e69d43880bc038d407.json
+Run 2 log: output/sessions/20261125T071702Z-brief-9af127ae69b646c2b7ec66ba2faa8067.json
+Run 2 brief: output/20261125T071702Z-brief-9af127ae69b646c2b7ec66ba2faa8067.md
+```
+
+### Historical 118.796-second run
 
 The isolated home, local server, and model were set up using the [README](README.md#prerequisites-and-setup).
 The verification command piped the same response an operator can enter at
@@ -43,9 +101,10 @@ printf 'y\n' | research-brief 'What does READ_ONLY declare in the OpenMinion Pyt
 
 Exit status was **0**. The tool retrieved `S1` and `S2` with no source
 errors. OpenMinion recorded the turn as `completed` and the CLI recorded
-`status: saved` after **118.796 seconds**. The timestamped file and the
-checked-in [sample brief](examples/sample-brief.md) matched the five-section
-preview byte for byte.
+`status: saved` after **118.796 seconds**. The timestamped file matched the
+five-section preview byte for byte. This command ends with
+`Paraphrase the evidence.`, which was absent from the latency verification
+command above.
 
 ```text
 Collected 2 usable source(s).
@@ -53,11 +112,12 @@ Saved: output/20261121T184018Z-brief-48216123b4954e8a897bbef1aa4b74d0.md
 Session log: output/sessions/20261121T184018Z-brief-48216123b4954e8a897bbef1aa4b74d0.json
 ```
 
-The sample SHA-256 is
+The original output SHA-256 was
 `1e9e92bddda5a68b9fcd75f47405078a9706a81e94935e417ee0dd28c9ae2bc8`.
-The sample cites the decorator and overstates what it enforces.
-`min_scope="READ_ONLY"` declares the minimum SDK policy scope for the
-invocation. The function implementation determines how it accesses data.
+The [sample brief](examples/sample-brief.md) edits the wording in that
+output to clarify that `min_scope="READ_ONLY"` declares the minimum SDK
+policy scope for invocation. The Python function determines how it accesses
+data.
 
 An earlier run asked “How does the OpenMinion 0.1 SDK register a read-only
 Python tool and force it to be called first?” with the same source arguments

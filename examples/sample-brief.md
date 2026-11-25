@@ -4,11 +4,11 @@ OpenMinion session: `brief-48216123b4954e8a897bbef1aa4b74d0`
 
 ## Executive summary
 
-The READ\_ONLY declaration in the OpenMinion Python SDK lookup\_order example signifies a tool call with minimal scope, allowing the tool to be executed but not interact with the data store.
+READ\_ONLY declares the minimum SDK policy scope for invoking lookup\_order. It does not enforce how the underlying Python function accesses data.
 
 ## Key points
 
-- The tool declared as READ\_ONLY in the example is intended for a tool call with minimal scope, enabling execution without interacting with the data store. [S1]
+- The decorator sets the minimum invocation scope to READ\_ONLY. The Python function determines how it accesses data. [S1, S2]
 
 ## Evidence
 

@@ -1,3 +1,6 @@
+from pathlib import Path
+import re
+
 import pytest
 from pydantic import ValidationError
 
@@ -84,3 +87,15 @@ def test_render_keeps_model_text_on_one_line(brief):
     )
     assert "Summary # Header &lt;script&gt;" in rendered
     assert "\x1b" not in rendered
+
+
+def test_sample_brief_read_only_is_declared_policy_scope_only():
+    sample = Path(__file__).resolve().parents[1] / "examples" / "sample-brief.md"
+    text = sample.read_text(encoding="utf-8").replace(r"\_", "_").lower()
+    assert "declares the minimum sdk policy scope" in text
+    assert "does not enforce how the underlying python function accesses data" in text
+    assert not re.search(
+        r"without interacting with|not interact with|prevents?\b[^.]*\baccess|"
+        r"cannot (?:access|interact with)|enforces?\b[^.]*\baccess",
+        text.replace("does not enforce", ""),
+    )
